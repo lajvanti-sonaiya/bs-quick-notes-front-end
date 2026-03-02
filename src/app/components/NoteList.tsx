@@ -1,6 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { fetchNotes } from "../redux/slices/note-slice";
+import {
+  fetchNotes,
+  updateNote,
+  updateNotesOrder,
+} from "../../redux/slices/note-slice";
 import { Box, Grid } from "@mui/system";
 import {
   Button,
@@ -18,10 +22,26 @@ import debounce from "lodash.debounce";
 import CloseIcon from "@mui/icons-material/Close";
 import { Note } from "@/types/notes/note";
 import { RootState } from "@/types/notes/note-redux";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { DialogState } from "@/types/components/note-dialouge";
 import NoteCard from "./common/NoteCard";
 import NoteDialog from "./common/NoteDialog";
+import {
+  DndContext,
+  closestCenter,
+  DragEndEvent,
+  closestCorners,
+  DragOverlay,
+  useSensors,
+  PointerSensor,  
+  useSensor,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import SortableNote from "./common/SortableNote";
 
 export default function NoteList() {
   const [page, setPage] = useState(0);
@@ -31,6 +51,7 @@ export default function NoteList() {
 
   const dispatch = useAppDispatch();
   const { notes, total } = useAppSelector((state: RootState) => state.note);
+  const [localNotes, setLocalNotes] = useState<Note[]>([]);
   const totalPages = Math.ceil(total / rowsPerPage);
   const [dialougeData, setDialougeData] = useState<DialogState>({
     open: false,
@@ -60,20 +81,73 @@ export default function NoteList() {
     dispatch(fetchNotes({ category, search, page, limit: rowsPerPage }));
   }, [category, page, rowsPerPage]);
 
+  useEffect(() => {
+    setLocalNotes(notes);
+  }, [notes]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const pinned = localNotes.filter((n) => n.isPinned);
+    const others = localNotes.filter((n) => !n.isPinned);
+
+    const isPinnedSection = pinned.some((n) => n._id === active.id);
+
+    if (isPinnedSection) {
+      const oldIndex = pinned.findIndex((n) => n._id === active.id);
+      const newIndex = pinned.findIndex((n) => n._id === over.id);
+      const newPinned = arrayMove(pinned, oldIndex, newIndex);
+
+      const updatedPinned = newPinned.map((note, index) => ({
+        ...note,
+        order: index + 1,
+      }));
+
+      setLocalNotes([...updatedPinned, ...others]);
+      dispatch(updateNotesOrder({ notes: updatedPinned }));
+
+    } else {
+      const oldIndex = others.findIndex((n) => n._id === active.id);
+      const newIndex = others.findIndex((n) => n._id === over.id);
+      const newOthers = arrayMove(others, oldIndex, newIndex);
+
+      const updatedOthers = newOthers.map((note, index) => ({
+        ...note,
+        order: index + 1,
+      }));
+
+      setLocalNotes([...pinned, ...updatedOthers]);
+      dispatch(updateNotesOrder({ notes: updatedOthers }));
+    }
+  };
+
+  const pinnedNotes = localNotes.filter((n) => n.isPinned);
+  const otherNotes = localNotes.filter((n) => !n.isPinned);
+
   return (
     <Box sx={{ padding: 4, display: "flex", flexDirection: "column", gap: 3 }}>
       <NoteDialog
-              open={dialougeData.open}
-              type={dialougeData.type}
-              title={dialougeData.title}
-              data={dialougeData.data}
-              handleClose={() => {
-                setDialougeData((old) => ({
-                  ...old,
-                  open: false,
-                }));
-              }}
-            />
+        open={dialougeData.open}
+        type={dialougeData.type}
+        title={dialougeData.title}
+        data={dialougeData.data}
+        handleClose={() => {
+          setDialougeData((old) => ({
+            ...old,
+            open: false,
+          }));
+        }}
+      />
       <Box sx={{ display: "flex", justifyContent: "center", gap: 3 }}>
         <TextField
           size="small"
@@ -122,36 +196,59 @@ export default function NoteList() {
           Add note
         </Button>
       </Box>
-      <Typography>Pinned note</Typography>
-      <Grid container spacing={2} sx={{ justifyContent: "start" }}>
-        {notes
-          .filter((note) => note.isPinned == true)
-          .map((row: Note, index) => (
-            <NoteCard
-              key={index}
-              row={row}
-              index={index}
-              dialougeData={dialougeData}
-              setDialougeData={setDialougeData}
-            />
-          ))}
-      </Grid>
 
-      <Typography> Others</Typography>
+      <DndContext
+        collisionDetection={closestCorners}
+        onDragEnd={handleDragEnd}
+        sensors={sensors}
+      >
+        <Typography>Pinned note</Typography>
 
-      <Grid container spacing={2} sx={{ justifyContent: "start" }}>
-        {notes
-          .filter((note) => note.isPinned == false)
-          .map((row: Note, index) => (
-            <NoteCard
-              key={index}
-              row={row}
-              index={index}
-              dialougeData={dialougeData}
-              setDialougeData={setDialougeData}
-            />
-          ))}
-      </Grid>
+        <SortableContext
+          items={pinnedNotes.map((n) => n._id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <Grid container spacing={2}>
+            {pinnedNotes.map((note, index) => (
+              <SortableNote key={note._id} id={note._id}>
+                <NoteCard
+                  row={note}
+                  index={index}
+                  dialougeData={dialougeData}
+                  setDialougeData={setDialougeData}
+                />
+              </SortableNote>
+            ))}
+          </Grid>
+        </SortableContext>
+      </DndContext>
+      <DndContext
+        collisionDetection={closestCorners}
+        onDragEnd={handleDragEnd}
+        sensors={sensors}
+      >
+        <Typography> Others</Typography>
+        <SortableContext
+          items={otherNotes.map((n) => n._id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <Grid container spacing={2} sx={{ justifyContent: "start" }}>
+            {otherNotes.map((note: Note, index) => {
+              return (
+                <SortableNote key={note._id} id={note._id}>
+                  <NoteCard
+                    key={index}
+                    row={note}
+                    index={index}
+                    dialougeData={dialougeData}
+                    setDialougeData={setDialougeData}
+                  />
+                </SortableNote>
+              );
+            })}
+          </Grid>
+        </SortableContext>
+      </DndContext>
       {totalPages > 1 && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Pagination

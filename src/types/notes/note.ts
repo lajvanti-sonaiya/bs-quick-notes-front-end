@@ -5,6 +5,7 @@ export interface Note {
   category: string;
   isPinned: boolean;
   createdAt: string;
+  order: number;
 }
 export interface NoteDialogProps {
   open: boolean;

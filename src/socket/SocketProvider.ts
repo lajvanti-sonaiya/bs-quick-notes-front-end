@@ -3,22 +3,26 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { socket } from ".";
-import { socketNoteCreated, socketNoteDeleted, socketNoteUpdated } from "../redux/slices/note-slice";
-
+import {
+  socketNoteCreated,
+  socketNoteDeleted,
+  socketNoteUpdated,
+} from "@/redux/slices/note-slice";
+import { useAuth } from "@clerk/nextjs";
 
 export default function SocketProvider({ children }) {
   const dispatch = useDispatch();
+  const { userId, isLoaded } = useAuth();
 
   useEffect(() => {
-    // socket.connect();
+    
+    if (!socket.connected) {
+      socket.connect();
+    }
 
-
- if (!socket.connected) {
-    socket.connect();
-  }
+    socket.emit("join", userId);
 
     socket.on("note:created", (note) => {
-    
       dispatch(socketNoteCreated(note));
     });
 

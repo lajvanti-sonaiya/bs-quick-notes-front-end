@@ -6,10 +6,10 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import { useFormik } from "formik";
 import { Box, FormHelperText, MenuItem, TextField } from "@mui/material";
-import { noteSchema } from "@/app/validation/note-validation";
-import { createNote, updateNote } from "@/app/redux/slices/note-slice";
+import { noteSchema } from "@/validation/note-validation";
+import { createNote, updateNote } from "@/redux/slices/note-slice";
 import CircularProgress from "@mui/material/CircularProgress";
-import { useAppSelector, useAppDispatch } from "@/app/redux/hooks";
+import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { NoteDialogProps } from "@/types/notes/note";
 
 const NoteDialog = ({
@@ -148,7 +148,6 @@ const NoteDialog = ({
             <Button type="submit" variant="contained" disabled={loading}>
               {type === "create" ? "Add Note" : "Update Note"}
             </Button>
-
           </DialogActions>
         </form>
       </DialogContent>
@@ -156,4 +155,4 @@ const NoteDialog = ({
   );
 };
 
-export default NoteDialog;
+export default React.memo(NoteDialog);

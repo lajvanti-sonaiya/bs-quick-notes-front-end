@@ -3,11 +3,11 @@ import { Note } from "@/types/notes/note";
 import { Box, Grid, IconButton, Typography } from "@mui/material";
 import React, { useState } from "react";
 import NoteDialog from "./NoteDialog";
-import { useAppDispatch } from "@/app/redux/hooks";
-import { deleteNote, updateNote } from "@/app/redux/slices/note-slice";
-import { truncate } from "@/app/utills/turncate-text";
+import { useAppDispatch } from "@/redux/hooks";
+import { deleteNote, updateNote } from "@/redux/slices/note-slice";
+import { truncate } from "@/utills/turncate-text";
 import PushPinIcon from "@mui/icons-material/PushPin";
-import { confirmDeleteAlert } from "@/app/utills/confirm-alert";
+import { confirmDeleteAlert } from "@/utills/confirm-alert";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 const NoteCard = ({

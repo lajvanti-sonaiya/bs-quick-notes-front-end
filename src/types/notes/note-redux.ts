@@ -1,10 +1,8 @@
-import { store } from "@/app/redux/store";
+import { store } from "@/redux/store";
 import { Note } from "./note";
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-
-
 
 export interface NoteState {
   notes: Note[];
@@ -23,5 +21,5 @@ export interface FetchNotesPayload {
 
 export interface UpdateNotePayload {
   id: string;
-  data: Partial<Pick<Note, "title" | "content" | "category" | "isPinned">>;
+  data: Partial<Pick<Note, "title" | "content" | "category" | "isPinned" |"order">>;
 }
