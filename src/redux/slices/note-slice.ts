@@ -2,6 +2,7 @@ import { axiosInstance } from "@/services/axios-instance";
 import {
   addNoteToState,
   deleteNoteFormState,
+  updateNoteOrderFormState,
   updateNoteToState,
 } from "@/utills/note-reducer-helpers";
 import { Note } from "@/types/notes/note";
@@ -119,6 +120,10 @@ const noteSlice = createSlice({
     socketNoteDeleted: (state, action: PayloadAction<Note>) => {
       deleteNoteFormState(state, action.payload);
     },
+
+    socketOrderUpdate: (state, action: PayloadAction<Note>) => {
+      updateNoteOrderFormState(state, action.payload);
+    },
   },
 
   extraReducers: (builder) => {
@@ -173,7 +178,7 @@ const noteSlice = createSlice({
       });
   },
 });
-export const { socketNoteCreated, socketNoteUpdated, socketNoteDeleted } =
+export const { socketNoteCreated, socketNoteUpdated, socketNoteDeleted ,socketOrderUpdate } =
   noteSlice.actions;
 
 export default noteSlice.reducer;

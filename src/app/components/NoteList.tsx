@@ -84,6 +84,7 @@ export default function NoteList() {
   useEffect(() => {
     setLocalNotes(notes);
   }, [notes]);
+  console.log("🚀 ~ NoteList ~ notes:", notes)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

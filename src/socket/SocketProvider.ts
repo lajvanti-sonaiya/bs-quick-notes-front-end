@@ -7,6 +7,7 @@ import {
   socketNoteCreated,
   socketNoteDeleted,
   socketNoteUpdated,
+  socketOrderUpdate,
 } from "@/redux/slices/note-slice";
 import { useAuth } from "@clerk/nextjs";
 
@@ -15,7 +16,6 @@ export default function SocketProvider({ children }) {
   const { userId, isLoaded } = useAuth();
 
   useEffect(() => {
-    
     if (!socket.connected) {
       socket.connect();
     }
@@ -34,10 +34,16 @@ export default function SocketProvider({ children }) {
       dispatch(socketNoteDeleted(note));
     });
 
+    socket.on("note:OrderUpdated", (note) => {
+      dispatch(socketOrderUpdate(note));
+    });
+
     return () => {
       socket.off("note:created");
       socket.off("note:updated");
       socket.off("note:deleted");
+      socket.off("note:OrderUpdated");
+
       socket.disconnect();
     };
   }, []);
