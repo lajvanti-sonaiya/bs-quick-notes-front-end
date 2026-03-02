@@ -121,7 +121,7 @@ const noteSlice = createSlice({
       deleteNoteFormState(state, action.payload);
     },
 
-    socketOrderUpdate: (state, action: PayloadAction<Note>) => {
+    socketOrderUpdate: (state, action: PayloadAction<Note[]>) => {
       updateNoteOrderFormState(state, action.payload);
     },
   },

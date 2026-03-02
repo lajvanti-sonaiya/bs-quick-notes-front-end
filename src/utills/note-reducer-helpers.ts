@@ -41,7 +41,7 @@ export const deleteNoteFormState = (state:NoteState, notes:Note) => {
   }
 };
 
-export const updateNoteOrderFormState = (state:NoteState, notes:Note) => {
+export const updateNoteOrderFormState = (state:NoteState, notes:Note[]) => {
 
   state.notes = [...notes]; 
 };
