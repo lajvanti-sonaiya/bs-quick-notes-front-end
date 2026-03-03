@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   fetchNotes,
-  updateNote,
   updateNotesOrder,
 } from "../../redux/slices/note-slice";
 import { Box, Grid } from "@mui/system";
@@ -28,10 +27,8 @@ import NoteCard from "./common/NoteCard";
 import NoteDialog from "./common/NoteDialog";
 import {
   DndContext,
-  closestCenter,
   DragEndEvent,
   closestCorners,
-  DragOverlay,
   useSensors,
   PointerSensor,  
   useSensor,
@@ -51,7 +48,6 @@ export default function NoteList() {
 
   const dispatch = useAppDispatch();
   const { notes, total } = useAppSelector((state: RootState) => state.note);
-  const [localNotes, setLocalNotes] = useState<Note[]>([]);
   const totalPages = Math.ceil(total / rowsPerPage);
   const [dialougeData, setDialougeData] = useState<DialogState>({
     open: false,
@@ -81,10 +77,7 @@ export default function NoteList() {
     dispatch(fetchNotes({ category, search, page, limit: rowsPerPage }));
   }, [category, page, rowsPerPage]);
 
-  useEffect(() => {
-    setLocalNotes(notes);
-  }, [notes]);
-  console.log("🚀 ~ NoteList ~ notes:", notes)
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -99,8 +92,8 @@ export default function NoteList() {
 
     if (!over || active.id === over.id) return;
 
-    const pinned = localNotes.filter((n) => n.isPinned);
-    const others = localNotes.filter((n) => !n.isPinned);
+    const pinned = notes.filter((n) => n.isPinned);
+    const others = notes.filter((n) => !n.isPinned);
 
     const isPinnedSection = pinned.some((n) => n._id === active.id);
 
@@ -114,7 +107,6 @@ export default function NoteList() {
         order: index + 1,
       }));
 
-      setLocalNotes([...updatedPinned, ...others]);
       dispatch(updateNotesOrder({ notes: updatedPinned }));
 
     } else {
@@ -127,13 +119,12 @@ export default function NoteList() {
         order: index + 1,
       }));
 
-      setLocalNotes([...pinned, ...updatedOthers]);
       dispatch(updateNotesOrder({ notes: updatedOthers }));
     }
   };
 
-  const pinnedNotes = localNotes.filter((n) => n.isPinned);
-  const otherNotes = localNotes.filter((n) => !n.isPinned);
+  const pinnedNotes = notes.filter((n) => n.isPinned);
+  const otherNotes = notes.filter((n) => !n.isPinned);
 
   return (
     <Box sx={{ padding: 4, display: "flex", flexDirection: "column", gap: 3 }}>

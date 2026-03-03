@@ -17,7 +17,7 @@ export const addNoteToState = (state: NoteState, notes: Note) => {
   });
 };
 
-export const updateNoteToState = (state:NoteState, notes:Note) => {
+export const updateNoteToState = (state: NoteState, notes: Note) => {
   const index = state.notes.findIndex((note) => note._id === notes._id);
   if (index !== -1) {
     state.notes[index] = notes;
@@ -25,13 +25,14 @@ export const updateNoteToState = (state:NoteState, notes:Note) => {
 
   state.notes.sort((a, b) => {
     if (a.isPinned === b.isPinned) {
-      return new Date(b.createdAt) .getTime()- new Date(a.createdAt).getTime();
+      // return new Date(b.createdAt) .getTime()- new Date(a.createdAt).getTime();
+      return a.order - b.order;
     }
     return Number(b.isPinned) - Number(a.isPinned);
   });
 };
 
-export const deleteNoteFormState = (state:NoteState, notes:Note) => {
+export const deleteNoteFormState = (state: NoteState, notes: Note) => {
   const initialLength = state.notes.length;
 
   state.notes = state?.notes?.filter((note) => note._id !== notes._id);
@@ -41,9 +42,8 @@ export const deleteNoteFormState = (state:NoteState, notes:Note) => {
   }
 };
 
-export const updateNoteOrderFormState = (state:NoteState, notes:Note[]) => {
-
-  state.notes = [...notes]; 
+export const updateNoteOrderFormState = (state: NoteState, notes: Note[]) => {
+  state.notes = [...notes];
 };
 
 
