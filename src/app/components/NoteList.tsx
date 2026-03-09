@@ -48,6 +48,7 @@ export default function NoteList() {
 
   const dispatch = useAppDispatch();
   const { notes, total } = useAppSelector((state: RootState) => state.note);
+  console.log("🚀 ~ NoteList ~ notes:", notes)
   const totalPages = Math.ceil(total / rowsPerPage);
   const [dialougeData, setDialougeData] = useState<DialogState>({
     open: false,

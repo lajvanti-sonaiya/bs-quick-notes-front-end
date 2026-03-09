@@ -105,6 +105,31 @@ export const updateNotesOrder = createAsyncThunk<void, { notes: Note[] }>(
   },
 );
 
+interface UploadResponse {
+  urls: string[];
+}
+
+export const imageUpload = createAsyncThunk<UploadResponse, FormData>(
+  "notes/imageUpload",
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      console.log("images ==>>>", formData);
+      const res = await await axiosInstance.post(
+        "/notes/imageUpload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return res?.data?.data;
+    } catch (error) {
+      return rejectWithValue("Failed to upload image");
+    }
+  },
+);
+
 const noteSlice = createSlice({
   name: "note",
   initialState,
@@ -178,7 +203,11 @@ const noteSlice = createSlice({
       });
   },
 });
-export const { socketNoteCreated, socketNoteUpdated, socketNoteDeleted ,socketOrderUpdate } =
-  noteSlice.actions;
+export const {
+  socketNoteCreated,
+  socketNoteUpdated,
+  socketNoteDeleted,
+  socketOrderUpdate,
+} = noteSlice.actions;
 
 export default noteSlice.reducer;

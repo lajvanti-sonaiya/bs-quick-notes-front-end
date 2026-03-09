@@ -35,6 +35,7 @@ export default function SocketProvider({ children }) {
     });
 
     socket.on("note:OrderUpdated", (note) => {
+      console.log("🚀 ~ SocketProvider ~ note:", note)
       dispatch(socketOrderUpdate(note));
     });
 
@@ -43,7 +44,6 @@ export default function SocketProvider({ children }) {
       socket.off("note:updated");
       socket.off("note:deleted");
       socket.off("note:OrderUpdated");
-
       socket.disconnect();
     };
   }, []);
