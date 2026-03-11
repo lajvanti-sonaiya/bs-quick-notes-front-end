@@ -6,7 +6,7 @@ import  noteSlice  from './slices/note-slice'
 
 export const store = configureStore({
   reducer: {
-    note:noteSlice ,
+    note:noteSlice,
     user:userSlice
   },
 })

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -8,20 +8,30 @@ import { useFormik } from "formik";
 import {
   Box,
   FormHelperText,
+  IconButton,
   MenuItem,
   Skeleton,
   TextField,
 } from "@mui/material";
 import { noteSchema } from "@/validation/note-validation";
-import { createNote, imageUpload, updateNote } from "@/redux/slices/note-slice";
-import CircularProgress from "@mui/material/CircularProgress";
+import {
+  createNote,
+  imageDelete,
+  imageUpload,
+  updateNote,
+} from "@/redux/slices/note-slice";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { NoteDialogProps } from "@/types/notes/note";
 import styled from "@emotion/styled";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { v4 as uuidv4 } from "uuid";
-
 import DeleteIcon from "@mui/icons-material/Delete";
+import CloseIcon from "@mui/icons-material/Close";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Keyboard, Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+
 const NoteDialog = ({
   open,
   title,
@@ -32,10 +42,11 @@ const NoteDialog = ({
   const dispatch = useAppDispatch();
   const { loading } = useAppSelector((state) => state.note);
   const [images, setImages] = React.useState<
-    { id: string; url: string; uploading: boolean }[]
+    { id: string; url: string; uploading: boolean; isNew: boolean }[]
   >([]);
-  console.log("🚀 ~ NoteDialog ~ images:", images);
 
+  const [imgIndex, setImgIndex] = useState<number | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
     clipPath: "inset(50%)",
@@ -55,6 +66,7 @@ const NoteDialog = ({
         title: data?.title || "",
         content: data?.content || "",
         category: data?.category || "",
+        image: "",
       },
       validationSchema: noteSchema,
       onSubmit: async () => {
@@ -64,11 +76,35 @@ const NoteDialog = ({
 
   const handleSubmitNote = () => {
     try {
+      setIsSubmitted(true);
       if (type === "create") {
-        dispatch(createNote(values));
+        dispatch(
+          createNote({
+            ...values,
+            image: images
+              .filter((img) => !img.uploading)
+              .map((img) => ({
+                url: img.url,
+                public_id: img.id,
+              })),
+          }),
+        );
       }
       if (type === "edit") {
-        dispatch(updateNote({ id: data._id, data: values }));
+        dispatch(
+          updateNote({
+            id: data._id,
+            data: {
+              ...values,
+              image: images
+                .filter((img) => !img.uploading)
+                .map((img) => ({
+                  url: img.url,
+                  public_id: img.id,
+                })),
+            },
+          }),
+        );
       }
       resetForm();
       handleClose();
@@ -85,40 +121,69 @@ const NoteDialog = ({
       id: uuidv4(),
       url: null,
       uploading: true,
+      isNew: true,
     }));
     setImages((prev) => [...prev, ...newImages]);
-  fileArray.forEach((file) => formData.append("images", file));
+    fileArray.forEach((file) => formData.append("images", file));
 
     try {
       const res = await dispatch(imageUpload(formData)).unwrap();
       const uploadedUrls = await res;
-      setImages((prev) =>
-        prev.map((img, index) =>
-          img.uploading
-            ? { ...img, url: uploadedUrls[index], uploading: false }
-            : { ...img },
-        ),
-      );
 
       setImages((prev) =>
-prev.map((img) => {
-        const index = newImages.findIndex((n) => n.id === img.id);
-        if (index !== -1) {
-          return {
-            ...img,
-            url: uploadedUrls[index],
-            uploading: false,
-          };
-        }
-        return img; 
-      }),
-    );
+        prev.map((img) => {
+          const index = newImages.findIndex((n) => n.id === img.id);
+
+          if (index !== -1) {
+            return {
+              ...img,
+              id: uploadedUrls[index].public_id,
+              url: uploadedUrls[index].url,
+              uploading: false,
+            };
+          }
+
+          return img;
+        }),
+      );
     } catch (error) {
       setImages((prev) =>
         prev.map((img) => (img.uploading ? { ...img, uploading: false } : img)),
       );
     }
   };
+
+  const handleImageDelete = (id) => {
+    dispatch(imageDelete([id]));
+    setImages((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  useEffect(() => {
+    if (data?.image) {
+      setImages(
+        data.image.map((img) => ({
+          id: img?.public_id,
+          url: img?.url,
+          uploading: false,
+          isNew: false,
+        })),
+      );
+    } else {
+      setImages([]);
+    }
+  }, [data, open]);
+
+  useEffect(() => {
+    if (!open && !isSubmitted) {
+      const idsToDelete = images
+        .filter((img) => !img.uploading && img.isNew)
+        .map((img) => img.id);
+
+      if (idsToDelete.length > 0) {
+        dispatch(imageDelete(idsToDelete));
+      }
+    }
+  }, [open, images, isSubmitted]);
 
   return (
     <Dialog
@@ -189,7 +254,7 @@ prev.map((img) => {
             value={values.category}
             onChange={handleChange}
             error={touched.category && Boolean(errors.category)}
-            helperText={touched.category && String(errors.category)}
+            helperText={touched.category && String(errors.category ?? "")}
           >
             <MenuItem value="personal">Personal</MenuItem>
             <MenuItem value="work">Work</MenuItem>
@@ -204,7 +269,7 @@ prev.map((img) => {
               mt: 2,
             }}
           >
-            {images.map((img) => (
+            {images.map((img, index) => (
               <Box
                 key={img.id}
                 sx={{
@@ -213,6 +278,9 @@ prev.map((img) => {
                   height: 100,
                   borderRadius: 2,
                   marginBottom: 4,
+                  "&:hover .delete-icon": {
+                    opacity: 1,
+                  },
                 }}
               >
                 {img.uploading && (
@@ -225,20 +293,24 @@ prev.map((img) => {
                       src={img?.url}
                       style={{
                         width: "100%",
-                        height: "100%",
+                        height: "80%",
                         borderRadius: 2,
                       }}
+                      onClick={() => setImgIndex(index)}
                     />
                     <DeleteIcon
-                      onClick={() =>
-                        setImages((prev) => prev.filter((i) => i.id !== img.id))
-                      }
+                      className="delete-icon"
+                      onClick={() => handleImageDelete(img.id)}
                       sx={{
-                        color: "red",
+                        color: "white",
+                        backgroundColor: "gray",
+                        padding: "2px",
+                        borderRadius: 1,
                         position: "absolute",
                         cursor: "pointer",
                         top: 5,
                         right: 5,
+                        opacity: 0,
                       }}
                     />
                   </>
@@ -262,6 +334,62 @@ prev.map((img) => {
             />
           </Button>
 
+          <Dialog fullScreen open={imgIndex !== null}>
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
+                background: "black",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <IconButton
+                onClick={() => setImgIndex(null)}
+                sx={{
+                  position: "absolute",
+                  top: 20,
+                  right: 20,
+                  color: "white",
+                  zIndex: 10,
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+              <Swiper
+                modules={[Navigation, Keyboard]}
+                navigation
+                initialSlide={imgIndex || 0}
+                style={{ width: "100%", height: "100%" }}
+                keyboard={{ enabled: true }}
+              >
+                {images.map((img) => (
+                  <SwiperSlide key={img.id}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "100%",
+                      }}
+                    >
+                      <img
+                        src={img.url}
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    </Box>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </Box>
+            {errors.image && (
+              <FormHelperText color="red">{errors.image}</FormHelperText>
+            )}
+          </Dialog>
           <DialogActions>
             <Button
               onClick={() => {
@@ -271,7 +399,11 @@ prev.map((img) => {
             >
               Cancel
             </Button>
-            <Button type="submit" variant="contained" disabled={loading}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading || images.some((img) => img.uploading)}
+            >
               {type === "create" ? "Add Note" : "Update Note"}
             </Button>
           </DialogActions>

@@ -16,6 +16,8 @@ export default function SocketProvider({ children }) {
   const { userId, isLoaded } = useAuth();
 
   useEffect(() => {
+    if (!isLoaded || !userId) return;
+
     if (!socket.connected) {
       socket.connect();
     }
@@ -35,7 +37,6 @@ export default function SocketProvider({ children }) {
     });
 
     socket.on("note:OrderUpdated", (note) => {
-      console.log("🚀 ~ SocketProvider ~ note:", note)
       dispatch(socketOrderUpdate(note));
     });
 
@@ -46,7 +47,7 @@ export default function SocketProvider({ children }) {
       socket.off("note:OrderUpdated");
       socket.disconnect();
     };
-  }, []);
+  }, [userId]);
 
   return children;
 }

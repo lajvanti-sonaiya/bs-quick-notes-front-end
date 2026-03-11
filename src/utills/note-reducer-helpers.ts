@@ -11,7 +11,7 @@ export const addNoteToState = (state: NoteState, notes: Note) => {
 
   state.notes.sort((a, b) => {
     if (a.isPinned === b.isPinned) {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return a.order - b.order;
     }
     return Number(b.isPinned) - Number(a.isPinned);
   });
@@ -25,7 +25,6 @@ export const updateNoteToState = (state: NoteState, notes: Note) => {
 
   state.notes.sort((a, b) => {
     if (a.isPinned === b.isPinned) {
-      // return new Date(b.createdAt) .getTime()- new Date(a.createdAt).getTime();
       return a.order - b.order;
     }
     return Number(b.isPinned) - Number(a.isPinned);

@@ -30,7 +30,7 @@ import {
   DragEndEvent,
   closestCorners,
   useSensors,
-  PointerSensor,  
+  PointerSensor,
   useSensor,
 } from "@dnd-kit/core";
 import {
@@ -48,7 +48,6 @@ export default function NoteList() {
 
   const dispatch = useAppDispatch();
   const { notes, total } = useAppSelector((state: RootState) => state.note);
-  console.log("🚀 ~ NoteList ~ notes:", notes)
   const totalPages = Math.ceil(total / rowsPerPage);
   const [dialougeData, setDialougeData] = useState<DialogState>({
     open: false,
@@ -77,8 +76,6 @@ export default function NoteList() {
   useEffect(() => {
     dispatch(fetchNotes({ category, search, page, limit: rowsPerPage }));
   }, [category, page, rowsPerPage]);
-
-
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -109,7 +106,6 @@ export default function NoteList() {
       }));
 
       dispatch(updateNotesOrder({ notes: updatedPinned }));
-
     } else {
       const oldIndex = others.findIndex((n) => n._id === active.id);
       const newIndex = others.findIndex((n) => n._id === over.id);
@@ -205,10 +201,10 @@ export default function NoteList() {
             {pinnedNotes.map((note, index) => (
               <SortableNote key={note._id} id={note._id}>
                 <NoteCard
-                  row={note}
-                  index={index}
-                  dialougeData={dialougeData}
-                  setDialougeData={setDialougeData}
+                    row={note}
+                    index={index}
+                    dialougeData={dialougeData}
+                    setDialougeData={setDialougeData}
                 />
               </SortableNote>
             ))}
@@ -230,7 +226,6 @@ export default function NoteList() {
               return (
                 <SortableNote key={note._id} id={note._id}>
                   <NoteCard
-                    key={index}
                     row={note}
                     index={index}
                     dialougeData={dialougeData}

@@ -21,5 +21,5 @@ export interface FetchNotesPayload {
 
 export interface UpdateNotePayload {
   id: string;
-  data: Partial<Pick<Note, "title" | "content" | "category" | "isPinned" |"order">>;
+  data: Partial<Pick<Note, "title" | "content" | "category" | "isPinned" |"order" |"image">>;
 }

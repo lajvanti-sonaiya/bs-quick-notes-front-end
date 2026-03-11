@@ -5,6 +5,12 @@ export interface Note {
   category: string;
   isPinned: boolean;
   createdAt: string;
+  image: 
+    {
+      url: string
+      public_id: string;
+    }[],
+  
   order: number;
 }
 export interface NoteDialogProps {

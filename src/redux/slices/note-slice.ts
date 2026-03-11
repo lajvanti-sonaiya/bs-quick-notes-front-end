@@ -1,3 +1,5 @@
+"use client";
+
 import { axiosInstance } from "@/services/axios-instance";
 import {
   addNoteToState,
@@ -20,8 +22,7 @@ const initialState: NoteState = {
   loading: false,
   error: null,
 };
-
-//frtch all
+//fetch all
 export const fetchNotes = createAsyncThunk<
   { notes: Note[]; total: number },
   FetchNotesPayload,
@@ -114,21 +115,35 @@ export const imageUpload = createAsyncThunk<UploadResponse, FormData>(
   async (formData: FormData, { rejectWithValue }) => {
     try {
       console.log("images ==>>>", formData);
-      const res = await await axiosInstance.post(
-        "/notes/imageUpload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      const res = await axiosInstance.post("/notes/imageUpload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
       return res?.data?.data;
     } catch (error) {
       return rejectWithValue("Failed to upload image");
     }
   },
 );
+
+export const imageDelete = createAsyncThunk<
+  string[],
+  string[],
+  { rejectValue: string }
+>("notes/deleteImage", async (ids: string[], { rejectWithValue }) => {
+  try {
+    const res = await axiosInstance.post(`/notes/images/delete`, {
+      public_ids: ids,
+    });
+
+    return res?.data?.data;
+  } catch (error) {
+    return rejectWithValue(
+      error.response?.data?.message || "Failed to delete note",
+    );
+  }
+});
 
 const noteSlice = createSlice({
   name: "note",
@@ -158,11 +173,13 @@ const noteSlice = createSlice({
         state.fetchLoading = true;
       })
       .addCase(fetchNotes.fulfilled, (state, action) => {
+        state.fetchLoading = false;
         state.notes = action.payload.notes;
         state.total = action.payload.total;
       })
       .addCase(fetchNotes.rejected, (state, action) => {
         state.error = action.payload;
+        state.fetchLoading = false;
       });
 
     //create note
@@ -171,9 +188,7 @@ const noteSlice = createSlice({
         state.loading = true;
       })
       .addCase(createNote.fulfilled, (state, action) => {
-        ((state.loading = false),
-          //   (state.notes = [action.payload.data, ...state.notes]);
-          addNoteToState(state, action.payload));
+        ((state.loading = false), addNoteToState(state, action.payload));
       })
       .addCase(createNote.rejected, (state, action) => {
         ((state.loading = false), (state.error = action.payload));
@@ -196,6 +211,7 @@ const noteSlice = createSlice({
         state.loading = true;
       })
       .addCase(deleteNote.fulfilled, (state, action) => {
+        state.loading = false;
         deleteNoteFormState(state, action.payload);
       })
       .addCase(deleteNote.rejected, (state, action) => {
