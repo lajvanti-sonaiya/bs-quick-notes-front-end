@@ -114,7 +114,6 @@ export const imageUpload = createAsyncThunk<UploadResponse, FormData>(
   "notes/imageUpload",
   async (formData: FormData, { rejectWithValue }) => {
     try {
-      console.log("images ==>>>", formData);
       const res = await axiosInstance.post("/notes/imageUpload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",

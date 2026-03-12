@@ -125,23 +125,22 @@ const NoteCard = ({
             {truncate(row?.content, 100)}
           </Typography>
 
-          {row.image.length > 0 && (
+          {row?.image?.length > 0 && (
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${Math.min(row.image.length, 2)}, 1fr)`,
-
                 gap: 1,
-                
                 mt: 1,
                 height: 120,
                 overflowX: "hidden",
               }}
             >
-              {row.image.map((img) => {
+              {row.image.map((img,index) => {
                 return (
                   <img
                     src={img?.url}
+                    key={index}
                     style={{
                       width: "100%",
                       height: 70,
