@@ -1,14 +1,16 @@
-"use client";
-import { Box } from "@mui/material";
-import { useSession } from "@clerk/nextjs";
+"use client"
+
+import { Box, Typography } from "@mui/material";
+import { useSession, useUser } from "@clerk/nextjs";
 import { useAppDispatch } from "@/redux/hooks";
 import { useEffect, useRef } from "react";
 import { setClerkToken } from "@/utills/auth-token";
 import { syncUser } from "@/redux/slices/user-slice";
-import Board from "../components/Board";
+import NoteList from "../../components/notes/NoteList";
 
-export default function Home() {
-  const { session, isLoaded } = useSession();
+
+const Notes = () => {
+  const { session, isLoaded, isSignedIn } = useSession();
 
   const dispatch = useAppDispatch();
   const hasInitialized = useRef(false);
@@ -19,6 +21,7 @@ export default function Home() {
     const init = async () => {
       const token = await session.getToken();
       if (!token) return;
+
       setClerkToken(token);
       dispatch(syncUser());
     };
@@ -26,6 +29,7 @@ export default function Home() {
     init();
   }, [isLoaded, session]);
 
+  
   return (
     <Box
       sx={{
@@ -34,10 +38,23 @@ export default function Home() {
         alignItems: "center",
         gap: 2,
         marginTop: 6,
-        padding:4
       }}
     >
-      <Board/>
+      {!isSignedIn && (
+        <>
+          <Typography variant="h3">Quick Notes</Typography>
+          <Typography> Capture your thoughts instantly ✨</Typography>
+        </>
+      )}
+
+      {isSignedIn && (
+        <>
+          <Typography variant="h3">Quick Notes</Typography>
+          <NoteList />
+        </>
+      )}
     </Box>
   );
-}
+};
+
+export default Notes;

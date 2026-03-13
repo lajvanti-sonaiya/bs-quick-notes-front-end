@@ -1,12 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import {
-  fetchNotes,
-  updateNotesOrder,
-} from "../../redux/slices/note-slice";
+import { fetchNotes, updateNotesOrder } from "../../../redux/slices/note-slice";
 import { Box, Grid } from "@mui/system";
 import {
   Button,
+  CircularProgress,
   FormControl,
   IconButton,
   InputAdornment,
@@ -21,10 +19,10 @@ import debounce from "lodash.debounce";
 import CloseIcon from "@mui/icons-material/Close";
 import { Note } from "@/types/notes/note";
 import { RootState } from "@/types/notes/note-redux";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { DialogState } from "@/types/components/note-dialouge";
-import NoteCard from "./common/NoteCard";
-import NoteDialog from "./common/NoteDialog";
+import NoteCard from "./NoteCard";
+import NoteDialog from "./NoteDialog";
 import {
   DndContext,
   DragEndEvent,
@@ -38,7 +36,8 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import SortableNote from "./common/SortableNote";
+import SortableNote from "./SortableNote";
+import { useSession } from "@clerk/nextjs";
 
 export default function NoteList() {
   const [page, setPage] = useState(0);
@@ -47,7 +46,11 @@ export default function NoteList() {
   const [search, setSearch] = useState<string>("");
 
   const dispatch = useAppDispatch();
-  const { notes, total } = useAppSelector((state: RootState) => state.note);
+  const { isLoaded, isSignedIn } = useSession();
+
+  const { notes, total, fetchLoading } = useAppSelector(
+    (state: RootState) => state.note,
+  );
   const totalPages = Math.ceil(total / rowsPerPage);
   const [dialougeData, setDialougeData] = useState<DialogState>({
     open: false,
@@ -59,6 +62,8 @@ export default function NoteList() {
   const debounceSearch = useMemo(
     () =>
       debounce((value: string) => {
+        if (!isLoaded || !isSignedIn) return;
+
         dispatch(
           fetchNotes({ category, search: value, page, limit: rowsPerPage }),
         );
@@ -68,12 +73,14 @@ export default function NoteList() {
 
   useEffect(() => {
     debounceSearch(search);
+
     return () => {
       debounceSearch.cancel();
     };
   }, [search]);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     dispatch(fetchNotes({ category, search, page, limit: rowsPerPage }));
   }, [category, page, rowsPerPage]);
 
@@ -186,67 +193,88 @@ export default function NoteList() {
         </Button>
       </Box>
 
-      <DndContext
-        collisionDetection={closestCorners}
-        onDragEnd={handleDragEnd}
-        sensors={sensors}
-      >
-        <Typography>Pinned note</Typography>
-
-        <SortableContext
-          items={pinnedNotes.map((n) => n._id)}
-          strategy={verticalListSortingStrategy}
+      {fetchLoading && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "50vh",
+          }}
         >
-          <Grid container spacing={2}>
-            {pinnedNotes.map((note, index) => (
-              <SortableNote key={note._id} id={note._id}>
-                <NoteCard
-                    row={note}
-                    index={index}
-                    dialougeData={dialougeData}
-                    setDialougeData={setDialougeData}
-                />
-              </SortableNote>
-            ))}
-          </Grid>
-        </SortableContext>
-      </DndContext>
-      <DndContext
-        collisionDetection={closestCorners}
-        onDragEnd={handleDragEnd}
-        sensors={sensors}
-      >
-        <Typography> Others</Typography>
-        <SortableContext
-          items={otherNotes.map((n) => n._id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <Grid container spacing={2} sx={{ justifyContent: "start" }}>
-            {otherNotes.map((note: Note, index) => {
-              return (
-                <SortableNote key={note._id} id={note._id}>
-                  <NoteCard
-                    row={note}
-                    index={index}
-                    dialougeData={dialougeData}
-                    setDialougeData={setDialougeData}
-                  />
-                </SortableNote>
-              );
-            })}
-          </Grid>
-        </SortableContext>
-      </DndContext>
-      {totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <Pagination
-            count={totalPages}
-            page={page + 1}
-            onChange={(e, value) => setPage(value - 1)}
-            color="primary"
-            shape="rounded"
-          />
+          <CircularProgress />
         </Box>
+      )}
+
+      {!fetchLoading && (
+        <>
+          {pinnedNotes.length > 0 && (
+            <DndContext
+              collisionDetection={closestCorners}
+              onDragEnd={handleDragEnd}
+              sensors={sensors}
+            >
+              <Typography>Pinned note</Typography>
+              <SortableContext
+                items={pinnedNotes.map((n) => n._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Grid container spacing={2}>
+                  {pinnedNotes.map((note, index) => (
+                    <SortableNote key={note._id} id={note._id}>
+                      <NoteCard
+                        row={note}
+                        index={index}
+                        dialougeData={dialougeData}
+                        setDialougeData={setDialougeData}
+                      />
+                    </SortableNote>
+                  ))}
+                </Grid>
+              </SortableContext>
+            </DndContext>
+          )}
+          {otherNotes.length > 0 && (
+            <DndContext
+              collisionDetection={closestCorners}
+              onDragEnd={handleDragEnd}
+              sensors={sensors}
+            >
+              <Typography> Others</Typography>
+              <SortableContext
+                items={otherNotes.map((n) => n._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Grid container spacing={2} sx={{ justifyContent: "start" }}>
+                  {otherNotes.map((note: Note, index) => {
+                    return (
+                      <SortableNote key={note._id} id={note._id}>
+                        <NoteCard
+                          row={note}
+                          index={index}
+                          dialougeData={dialougeData}
+                          setDialougeData={setDialougeData}
+                        />
+                      </SortableNote>
+                    );
+                  })}
+                </Grid>
+              </SortableContext>
+            </DndContext>
+          )}
+
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Pagination
+                count={totalPages}
+                page={page + 1}
+                onChange={(e, value) => setPage(value - 1)}
+                color="primary"
+                shape="rounded"
+              />
+            </Box>
+          )}
+        </>
       )}
     </Box>
   );

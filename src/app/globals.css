@@ -6,7 +6,7 @@
 /* Scroll bar stylings */
 ::-webkit-scrollbar {
   width: 5px;
-  height: 10px;
+  height: 3px;
 }
 /* Track */
 ::-webkit-scrollbar-track {

@@ -24,7 +24,6 @@ const NoteCard = ({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const dispatch = useAppDispatch();
-
   const handleTogglePin = (note: Note) => {
     dispatch(
       updateNote({

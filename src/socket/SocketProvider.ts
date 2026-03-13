@@ -22,7 +22,11 @@ export default function SocketProvider({ children }) {
       socket.connect();
     }
 
-    socket.emit("join", userId);
+    const handleConnect = () => {
+      socket.emit("join", userId);
+    };
+
+    socket.on("connect", handleConnect);
 
     socket.on("note:created", (note) => {
       dispatch(socketNoteCreated(note));
