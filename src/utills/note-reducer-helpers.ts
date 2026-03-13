@@ -1,0 +1,48 @@
+import { Note } from "@/types/notes/note";
+import { NoteState } from "@/types/notes/note-redux";
+
+export const addNoteToState = (state: NoteState, notes: Note) => {
+  const index = state?.notes?.findIndex((note) => note._id == notes._id);
+
+  if (index === -1) {
+    state.notes = [notes, ...state.notes];
+    state.total += 1;
+  }
+
+  state.notes.sort((a, b) => {
+    if (a.isPinned === b.isPinned) {
+      return a.order - b.order;
+    }
+    return Number(b.isPinned) - Number(a.isPinned);
+  });
+};
+
+export const updateNoteToState = (state: NoteState, notes: Note) => {
+  const index = state.notes.findIndex((note) => note._id === notes._id);
+  if (index !== -1) {
+    state.notes[index] = notes;
+  }
+
+  state.notes.sort((a, b) => {
+    if (a.isPinned === b.isPinned) {
+      return a.order - b.order;
+    }
+    return Number(b.isPinned) - Number(a.isPinned);
+  });
+};
+
+export const deleteNoteFormState = (state: NoteState, notes: Note) => {
+  const initialLength = state.notes.length;
+
+  state.notes = state?.notes?.filter((note) => note._id !== notes._id);
+  // state.total -= 1;
+  if (state.notes.length < initialLength) {
+    state.total -= 1;
+  }
+};
+
+export const updateNoteOrderFormState = (state: NoteState, notes: Note[]) => {
+  state.notes = [...notes];
+};
+
+

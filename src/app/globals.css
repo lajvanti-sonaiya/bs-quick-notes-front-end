@@ -1,0 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Averia+Gruesa+Libre&display=swap");
+
+:root {
+  --font-averia: "Averia Gruesa Libre", system-ui;
+}
+/* Scroll bar stylings */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 3px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  background: var(--lightestgrey); 
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #007aff; 
+  border-radius: 5px;
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #095fbb; 
+}
